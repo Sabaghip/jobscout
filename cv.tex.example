@@ -1,0 +1,18 @@
+% Put your real CV here as cv.tex (it's gitignored - won't be committed).
+% LaTeX source is fine as-is, the LLM reads past the markup - no need to compile it.
+% To use a CV living somewhere else instead, set CV_PATH in .env to its path.
+
+\documentclass{article}
+\begin{document}
+
+\section*{Jane Doe}
+Software engineer with 5 years of experience in backend systems.
+
+\section*{Experience}
+\textbf{Backend Engineer, ExampleCo} (2021--present) \\
+Built and operated Python/Go microservices handling 10k req/s.
+
+\section*{Skills}
+Python, Go, PostgreSQL, Kubernetes, AWS
+
+\end{document}

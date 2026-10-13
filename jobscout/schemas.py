@@ -52,6 +52,15 @@ class JobPosting(BaseModel):
     )
 
 
+class JobRating(BaseModel):
+    """How well a job fits the candidate's CV, produced once per job per CV."""
+
+    score: int = Field(ge=0, le=100, description="0-100 fit score between the CV and the job")
+    positives: list[str] = Field(default_factory=list, description="Concrete matches: skills/experience that fit")
+    negatives: list[str] = Field(default_factory=list, description="Concrete gaps or mismatches")
+    reasoning: str = Field(default="", description="One-paragraph explanation grounded in the CV and job text")
+
+
 class Company(BaseModel):
     name: str
     url: str

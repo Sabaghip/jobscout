@@ -14,6 +14,16 @@ DB_FILE = PROJECT_ROOT / "jobs.db"
 
 load_dotenv(PROJECT_ROOT / ".env")
 
+CV_FILE = PROJECT_ROOT / os.environ.get("CV_PATH", "cv.tex")
+
+
+def load_cv_text() -> str:
+    """Read the candidate's CV from CV_FILE (LaTeX source is fine as-is - the LLM reads
+    past the markup). Point CV_PATH in .env at a different file to use another CV."""
+    if not CV_FILE.exists():
+        return ""
+    return CV_FILE.read_text()
+
 
 def load_companies() -> list[Company]:
     if not COMPANIES_FILE.exists():

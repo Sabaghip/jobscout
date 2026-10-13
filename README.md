@@ -10,7 +10,7 @@ SQLite. A Tkinter GUI (or the CLI) lets you browse what it found.
 Each company run goes through a small LangGraph pipeline (`jobscout/graph.py`):
 
 ```
-scrape -> extract -> describe -> structure -> store
+scrape -> extract -> describe -> structure -> store -> (separately) rate
 ```
 
 - **scrape** - Playwright loads the careers listing page (scrolls, tries "load more"
@@ -25,9 +25,14 @@ scrape -> extract -> describe -> structure -> store
   are skipped here, so rescans don't keep re-paying for unchanged postings.
 - **store** - upserts into `jobs.db` (SQLite), tracking first/last seen and which
   jobs are new since the last scan.
+- **rate** (run separately via `jobscout rate` / "Rate new jobs", not part of a scan) -
+  one LLM call per unrated job: compares the job's `JobSummary` against your CV
+  (`cv.tex`) and produces a 0-100 fit score plus concrete positives/negatives. Jobs
+  that already have a rating are skipped unless you pass `--force`.
 
 Cost per scan: 1 LLM call per company + 1 LLM call per brand-new job found. Already-seen
-jobs cost nothing extra on a rescan.
+jobs cost nothing extra on a rescan. Rating is separate and only costs a call for jobs
+that haven't been rated yet.
 
 ## Setup
 
@@ -57,6 +62,10 @@ Debian/Ubuntu:
 sudo apt install -y python3-tk
 ```
 
+Copy `cv.tex.example` to `cv.tex` and replace it with your real CV (LaTeX source is
+fine as-is - it's read directly, not compiled). `cv.tex` is gitignored. To use a CV
+file living elsewhere, set `CV_PATH` in `.env` to its path instead.
+
 ## Usage
 
 CLI (`jobscout/cli.py`):
@@ -70,6 +79,9 @@ python3 main.py jobs                       # list everything stored
 python3 main.py jobs --company "Some Company"
 python3 main.py forget --company "Some Company"   # delete so next scan re-fetches
 python3 main.py forget --all
+python3 main.py rate                       # rate unrated jobs against cv.tex
+python3 main.py rate --company "Some Company"
+python3 main.py rate --force               # re-rate everything, including already-rated jobs
 ```
 
 GUI:
@@ -78,8 +90,9 @@ GUI:
 python3 main.py
 ```
 
-Add companies, hit "Scan selected" / "Scan all", and click a job row to see its
-structured summary + full raw description. Double-click opens the posting in your
+Add companies, hit "Scan selected" / "Scan all", then "Rate new jobs" once you have a
+`cv.tex` in place. Click a job row to see its fit score, positives/negatives,
+structured summary, and full raw description. Double-click opens the posting in your
 browser.
 
 ## Testing without burning API calls
@@ -90,6 +103,4 @@ spending real tokens.
 
 ## Status
 
-Scraping, structured extraction, and storage are done. CV-based rating (scoring each
-job against a resume) is planned but not yet implemented - `description` and
-`summary` are already being captured so that feature won't need to re-scrape anything.
+Scraping, structured extraction, storage, and CV-based rating are all working.

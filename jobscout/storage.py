@@ -6,7 +6,7 @@ from contextlib import closing
 from datetime import datetime, timezone
 
 from jobscout.config import DB_FILE
-from jobscout.schemas import JobPosting
+from jobscout.schemas import JobPosting, JobRating
 
 
 def make_job_id(company: str, job: JobPosting) -> str:
@@ -33,6 +33,13 @@ def init_db() -> None:
             )
             """
         )
+        # The schema has grown twice since this table was first created (summary_json,
+        # now rating columns) - add any columns an older jobs.db is missing rather than
+        # requiring the user to delete their data.
+        existing = {row[1] for row in conn.execute("PRAGMA table_info(jobs)").fetchall()}
+        for column in ("summary_json", "rating_json", "rated_at"):
+            if column not in existing:
+                conn.execute(f"ALTER TABLE jobs ADD COLUMN {column} TEXT")
         conn.commit()
 
 
@@ -114,6 +121,31 @@ def delete_jobs(company: str | None = None) -> int:
             cursor = conn.execute("DELETE FROM jobs")
         conn.commit()
         return cursor.rowcount
+
+
+def get_unrated_jobs(company: str | None = None) -> list[dict]:
+    """Jobs with no rating_json yet - what `rate` should spend LLM calls on."""
+    init_db()
+    with closing(sqlite3.connect(DB_FILE)) as conn:
+        conn.row_factory = sqlite3.Row
+        clause = "WHERE (rating_json IS NULL OR rating_json = '')"
+        params: tuple = ()
+        if company:
+            clause += " AND company = ?"
+            params = (company,)
+        rows = conn.execute(f"SELECT * FROM jobs {clause} ORDER BY first_seen DESC", params).fetchall()
+        return [dict(row) for row in rows]
+
+
+def save_rating(job_id: str, rating: JobRating) -> None:
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with closing(sqlite3.connect(DB_FILE)) as conn:
+        conn.execute(
+            "UPDATE jobs SET rating_json = ?, rated_at = ? WHERE id = ?",
+            (rating.model_dump_json(), now, job_id),
+        )
+        conn.commit()
 
 
 def get_companies_in_db() -> list[str]:
