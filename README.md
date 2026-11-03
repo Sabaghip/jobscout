@@ -1,9 +1,18 @@
 # JobScout
 
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![LangGraph](https://img.shields.io/badge/LangGraph-agent%20pipeline-orange) ![Playwright](https://img.shields.io/badge/Playwright-scraping-green) ![SQLite](https://img.shields.io/badge/SQLite-storage-lightgrey)
+
 Tracks open positions on company career pages. You give it a list of companies and
 their careers URL; it scrapes each page with Playwright, uses an LLM (via LangChain +
 LangGraph) to turn the mess into structured job listings, and stores everything in
 SQLite. A Tkinter GUI (or the CLI) lets you browse what it found.
+
+## Features
+- Scrapes company career pages with Playwright, including JS-rendered "load more" listings
+- Extracts structured job data (title, location, department, requirements, skills) via an LLM through a LangGraph pipeline
+- Rates each job against your CV with a 0-100 fit score plus concrete positives/negatives
+- Tracks first/last seen per job in SQLite, so rescans skip already-processed postings
+- CLI and Tkinter GUI — pick whichever you prefer
 
 ## How it works
 
